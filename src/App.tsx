@@ -116,7 +116,7 @@ function App() {
   const [question, setQuestion] = useState('');
   const [showQuestionInput, setShowQuestionInput] = useState(false);
   const [selectedType, setSelectedType] = useState<ReadingType | null>(null);
-  const [readingsLeft, setReadingsLeft] = useState(SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS);
+  const [readingsLeft, setReadingsLeft] = useState<number>(SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   useEffect(() => {
