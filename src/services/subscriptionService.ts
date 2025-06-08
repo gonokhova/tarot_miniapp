@@ -54,7 +54,7 @@ export class SubscriptionService {
         ]
       });
 
-      if (result === 'buy') {
+      if (result?.button_id === 'buy') {
         const subscription: Subscription = {
           isActive: true,
           expiresAt: Date.now() + SUBSCRIPTION_LIMITS.SUBSCRIPTION_DURATION,
