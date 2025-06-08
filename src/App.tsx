@@ -1,130 +1,139 @@
 import React, { useEffect, useState } from 'react';
-import styled from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
+import { lightTheme, darkTheme } from './styles/theme';
+import { Card, Reading, ReadingType } from './types/tarot';
+import { tarotService } from './services/tarotService';
+import { historyService } from './services/historyService';
+import { subscriptionService } from './services/subscriptionService';
+import { soundService } from './services/soundService';
 import WebApp from '@twa-dev/sdk';
-import { ReadingType, Reading, SUBSCRIPTION_LIMITS } from './types/tarot';
-import { TarotService } from './services/tarotService';
-import { SubscriptionService } from './services/subscriptionService';
-import ReadingResult from './components/ReadingResult';
-import DisclaimerModal from './components/DisclaimerModal';
+import { SUBSCRIPTION_LIMITS } from './types/tarot';
+import { ReadingComponent } from './components/Reading';
+import { ReadingResult } from './components/ReadingResult';
+import { DisclaimerModal } from './components/DisclaimerModal';
+import { HistoryView } from './components/HistoryView';
+import { TarotCard } from './components/TarotCard';
+import { AnimatedBackground } from './components/AnimatedBackground';
+import { AnimatedCard } from './components/AnimatedCard';
+import { ReadingButton } from './components/ReadingButton';
+import { ReadingOptions } from './components/ReadingOptions';
+import { SubscriptionInfo } from './components/SubscriptionInfo';
+import { Header } from './components/Header';
+import { Title } from './components/Title';
+import { SoundControl } from './components/SoundControl';
+import { ThemeToggle } from './components/ThemeToggle';
+
+type View = 'reading' | 'history' | 'result';
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #fff;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
 `;
 
-const Header = styled.header`
-  text-align: center;
-  margin-bottom: 30px;
+const Subtitle = styled.p`
+  color: #34495e;
+  font-size: 1.2rem;
 `;
 
-const Title = styled.h1`
-  font-size: 24px;
-  margin: 0;
-  color: #fff;
+const Controls = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
 `;
 
-const ReadingOptions = styled.div`
-  display: grid;
-  gap: 20px;
-  max-width: 600px;
-  margin: 0 auto;
-`;
-
-const ReadingButton = styled.button`
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  color: #fff;
-  font-size: 18px;
+const Button = styled.button`
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    background: #2980b9;
   }
 
   &:disabled {
-    opacity: 0.5;
+    background: #bdc3c7;
     cursor: not-allowed;
-    transform: none;
+  }
+`;
+
+const ReadingTypeContainer = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
+
+const ReadingTypeButton = styled(Button)<{ active: boolean }>`
+  background: ${props => props.active ? '#2ecc71' : '#3498db'};
+`;
+
+const CardGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+`;
+
+const Navigation = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+`;
+
+const NavButton = styled(Button)<{ isActive: boolean }>`
+  background: ${props => props.isActive ? '#2ecc71' : '#3498db'};
+`;
+
+const BackButton = styled(Button)`
+  background: #e74c3c;
+
+  &:hover {
+    background: #c0392b;
+  }
+`;
+
+const ShareButton = styled(Button)`
+  background: #2ecc71;
+
+  &:hover {
+    background: #27ae60;
   }
 `;
 
 const QuestionInput = styled.input`
-  width: 100%;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 16px;
-  margin-bottom: 20px;
-
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 1rem;
 `;
 
-const BackButton = styled.button`
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  color: #fff;
-  font-size: 16px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-`;
-
-const SubscriptionInfo = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 20px;
-  text-align: center;
-`;
-
-const PremiumButton = styled.button`
-  background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  color: #000;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-  }
-`;
-
-function App() {
-  const [currentReading, setCurrentReading] = useState<Reading | null>(null);
-  const [question, setQuestion] = useState('');
-  const [showQuestionInput, setShowQuestionInput] = useState(false);
-  const [selectedType, setSelectedType] = useState<ReadingType | null>(null);
+const App: React.FC = () => {
+  const [currentReading, setCurrentReading] = useState<Card[]>([]);
   const [readingsLeft, setReadingsLeft] = useState<number>(SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [currentView, setCurrentView] = useState<View>('reading');
+  const [selectedType, setSelectedType] = useState<ReadingType>('daily');
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   useEffect(() => {
     WebApp.ready();
     WebApp.expand();
-    setReadingsLeft(SubscriptionService.getReadingsLeft());
+    setReadingsLeft(subscriptionService.getReadingsLeft());
 
-    // Проверяем, показывали ли мы уже предупреждение
     const hasSeenDisclaimer = localStorage.getItem('hasSeenDisclaimer');
     if (hasSeenDisclaimer) {
       setShowDisclaimer(false);
@@ -137,115 +146,106 @@ function App() {
   };
 
   const handleReading = async (type: ReadingType) => {
-    if (!SubscriptionService.canPerformReading()) {
-      const purchased = await SubscriptionService.purchaseSubscription();
+    if (!subscriptionService.canPerformReading()) {
+      const purchased = await subscriptionService.purchaseSubscription();
       if (!purchased) return;
-      setReadingsLeft(SubscriptionService.getReadingsLeft());
+      setReadingsLeft(subscriptionService.getReadingsLeft());
     }
 
-    setSelectedType(type);
-    if (type === 'yesno') {
-      setShowQuestionInput(true);
-    } else {
-      const reading = TarotService.getReading(type);
-      setCurrentReading(reading);
-      SubscriptionService.decrementReadingsLeft();
-      setReadingsLeft(SubscriptionService.getReadingsLeft());
-    }
-  };
-
-  const handleQuestionSubmit = async () => {
-    if (!selectedType || !question.trim()) return;
-
-    if (!SubscriptionService.canPerformReading()) {
-      const purchased = await SubscriptionService.purchaseSubscription();
-      if (!purchased) return;
-      setReadingsLeft(SubscriptionService.getReadingsLeft());
-    }
-
-    const reading = TarotService.getReading(selectedType, question.trim());
-    setCurrentReading(reading);
-    setShowQuestionInput(false);
-    SubscriptionService.decrementReadingsLeft();
-    setReadingsLeft(SubscriptionService.getReadingsLeft());
+    const reading = tarotService.createReading(type);
+    setCurrentReading(reading.cards);
+    historyService.addToHistory(reading);
+    subscriptionService.decrementReadingsLeft();
+    setReadingsLeft(subscriptionService.getReadingsLeft());
   };
 
   const handleBack = () => {
-    setCurrentReading(null);
-    setQuestion('');
-    setShowQuestionInput(false);
-    setSelectedType(null);
+    setCurrentReading([]);
   };
 
   const handlePurchaseSubscription = async () => {
-    const purchased = await SubscriptionService.purchaseSubscription();
+    const purchased = await subscriptionService.purchaseSubscription();
     if (purchased) {
-      setReadingsLeft(SubscriptionService.getReadingsLeft());
+      setReadingsLeft(subscriptionService.getReadingsLeft());
     }
   };
 
+  const handleShare = () => {
+    if (currentReading.length) {
+      const shareText = `🔮 Таро Предсказание\n\n` +
+        `Тип: ${selectedType}\n` +
+        `Карты:\n${currentReading.map(card => 
+          `${card.name}${card.isReversed ? ' (Перевернутая)' : ''}`
+        ).join('\n')}\n\n` +
+        `Толкование:\n${currentReading.map(card => 
+          `${card.name}: ${card.isReversed ? card.reversedDescription : card.description}`
+        ).join('\n')}`;
+
+      WebApp.share(shareText);
+    }
+  };
+
+  const toggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+  };
+
   return (
-    <AppContainer>
-      {showDisclaimer && <DisclaimerModal onClose={handleDisclaimerClose} />}
-      
-      <Header>
-        <Title>Таро Предсказания</Title>
-      </Header>
+    <ThemeProvider theme={isDarkTheme ? darkTheme : lightTheme}>
+      <AppContainer>
+        <AnimatedBackground />
+        <Header>
+          <Title>Таро Предсказания</Title>
+          <Controls>
+            <ThemeToggle isDark={isDarkTheme} onToggle={toggleTheme} />
+            <SoundControl />
+          </Controls>
+        </Header>
 
-      {!currentReading && !showQuestionInput && (
-        <SubscriptionInfo>
-          <div>Осталось предсказаний сегодня: {readingsLeft}</div>
-          {readingsLeft === 0 && (
-            <PremiumButton onClick={handlePurchaseSubscription}>
-              Купить премиум за {SUBSCRIPTION_LIMITS.SUBSCRIPTION_PRICE} ₽/месяц
-            </PremiumButton>
-          )}
-        </SubscriptionInfo>
-      )}
+        {showDisclaimer && (
+          <DisclaimerModal onClose={handleDisclaimerClose} />
+        )}
 
-      {currentReading ? (
-        <>
-          <BackButton onClick={handleBack}>← Назад</BackButton>
-          <ReadingResult reading={currentReading} />
-        </>
-      ) : showQuestionInput ? (
-        <>
-          <BackButton onClick={handleBack}>← Назад</BackButton>
-          <QuestionInput
-            type="text"
-            placeholder="Задайте ваш вопрос..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleQuestionSubmit()}
-          />
-          <ReadingButton onClick={handleQuestionSubmit}>
-            Получить ответ
-          </ReadingButton>
-        </>
-      ) : (
-        <ReadingOptions>
-          <ReadingButton 
-            onClick={() => handleReading('daily')}
-            disabled={!SubscriptionService.canPerformReading()}
+        <Navigation>
+          <NavButton 
+            isActive={currentView === 'reading'} 
+            onClick={() => setCurrentView('reading')}
           >
-            Предсказание на день
-          </ReadingButton>
-          <ReadingButton 
-            onClick={() => handleReading('weekly')}
-            disabled={!SubscriptionService.canPerformReading()}
+            Предсказание
+          </NavButton>
+          <NavButton 
+            isActive={currentView === 'history'} 
+            onClick={() => setCurrentView('history')}
           >
-            Предсказание на неделю
-          </ReadingButton>
-          <ReadingButton 
-            onClick={() => handleReading('yesno')}
-            disabled={!SubscriptionService.canPerformReading()}
-          >
-            Да или Нет
-          </ReadingButton>
-        </ReadingOptions>
-      )}
-    </AppContainer>
+            История
+          </NavButton>
+        </Navigation>
+
+        {currentView === 'history' ? (
+          <HistoryView />
+        ) : currentReading.length > 0 ? (
+          <>
+            <BackButton onClick={handleBack}>← Назад</BackButton>
+            <ReadingComponent
+              reading={currentReading}
+              onClose={handleBack}
+            />
+            <ShareButton onClick={handleShare}>
+              Поделиться предсказанием
+            </ShareButton>
+          </>
+        ) : (
+          <>
+            <SubscriptionInfo readingsLeft={readingsLeft} />
+            <ReadingOptions
+              selectedType={selectedType}
+              onTypeSelect={setSelectedType}
+              onReadingStart={handleReading}
+            />
+          </>
+        )}
+      </AppContainer>
+    </ThemeProvider>
   );
-}
+};
 
 export default App; 

@@ -1,86 +1,84 @@
 import WebApp from '@twa-dev/sdk';
 import { Subscription, SUBSCRIPTION_LIMITS } from '../types/tarot';
 
-const STORAGE_KEY = 'tarot_subscription';
+class SubscriptionService {
+  private static instance: SubscriptionService;
+  private subscription: Subscription | null = null;
+  private readingsLeft: number = SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS;
 
-export class SubscriptionService {
-  private static getStoredSubscription(): Subscription | null {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored);
+  private constructor() {
+    this.loadSubscription();
   }
 
-  private static saveSubscription(subscription: Subscription): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(subscription));
-  }
-
-  static getSubscription(): Subscription {
-    const stored = this.getStoredSubscription();
-    const now = Date.now();
-
-    if (!stored || stored.expiresAt < now) {
-      // Создаем новую бесплатную подписку
-      const newSubscription: Subscription = {
-        isActive: false,
-        expiresAt: now + 24 * 60 * 60 * 1000, // 24 часа
-        dailyReadingsLeft: SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS
-      };
-      this.saveSubscription(newSubscription);
-      return newSubscription;
+  public static getInstance(): SubscriptionService {
+    if (!SubscriptionService.instance) {
+      SubscriptionService.instance = new SubscriptionService();
     }
+    return SubscriptionService.instance;
+  }
 
-    // Если подписка истекла сегодня, сбрасываем счетчик
-    const today = new Date().setHours(0, 0, 0, 0);
-    const subscriptionDate = new Date(stored.expiresAt).setHours(0, 0, 0, 0);
+  private loadSubscription(): void {
+    const savedSubscription = localStorage.getItem('subscription');
+    if (savedSubscription) {
+      this.subscription = JSON.parse(savedSubscription);
+    }
+  }
+
+  private saveSubscription(): void {
+    if (this.subscription) {
+      localStorage.setItem('subscription', JSON.stringify(this.subscription));
+    }
+  }
+
+  public static canPerformReading(): boolean {
+    const instance = SubscriptionService.getInstance();
+    return instance.readingsLeft > 0;
+  }
+
+  public static getReadingsLeft(): number {
+    const instance = SubscriptionService.getInstance();
+    return instance.readingsLeft;
+  }
+
+  public static decrementReadingsLeft(): void {
+    const instance = SubscriptionService.getInstance();
+    if (instance.readingsLeft > 0) {
+      instance.readingsLeft--;
+    }
+  }
+
+  public static async purchaseSubscription(): Promise<boolean> {
+    const instance = SubscriptionService.getInstance();
     
-    if (today > subscriptionDate) {
-      stored.dailyReadingsLeft = stored.isActive 
-        ? SUBSCRIPTION_LIMITS.PREMIUM_DAILY_READINGS 
-        : SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS;
-      this.saveSubscription(stored);
-    }
-
-    return stored;
-  }
-
-  static async purchaseSubscription(): Promise<boolean> {
     try {
-      await WebApp.showPopup({
+      const result = await WebApp.showPopup({
         title: 'Премиум подписка',
-        message: `Получите неограниченный доступ к предсказаниям за ${SUBSCRIPTION_LIMITS.SUBSCRIPTION_PRICE} ₽/месяц`,
+        message: `Хотите приобрести премиум подписку за ${SUBSCRIPTION_LIMITS.SUBSCRIPTION_PRICE} ₽/месяц?`,
         buttons: [
-          { id: 'buy', type: 'ok' },
+          { id: 'confirm', type: 'ok' },
           { id: 'cancel', type: 'cancel' }
         ]
       });
 
-      // В реальном приложении здесь будет обработка платежа
-      // Сейчас просто создаем подписку
-      const subscription: Subscription = {
-        isActive: true,
-        expiresAt: Date.now() + SUBSCRIPTION_LIMITS.SUBSCRIPTION_DURATION,
-        dailyReadingsLeft: SUBSCRIPTION_LIMITS.PREMIUM_DAILY_READINGS
-      };
-      this.saveSubscription(subscription);
-      return true;
+      if (result === 'confirm') {
+        const subscription: Subscription = {
+          isActive: true,
+          startDate: Date.now(),
+          endDate: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+          readingsLeft: SUBSCRIPTION_LIMITS.SUBSCRIPTION_DAILY_READINGS
+        };
+        
+        instance.subscription = subscription;
+        instance.readingsLeft = SUBSCRIPTION_LIMITS.SUBSCRIPTION_DAILY_READINGS;
+        instance.saveSubscription();
+        return true;
+      }
     } catch (error) {
       console.error('Error purchasing subscription:', error);
-      return false;
     }
+    
+    return false;
   }
+}
 
-  static canPerformReading(): boolean {
-    const subscription = this.getSubscription();
-    return subscription.dailyReadingsLeft > 0;
-  }
-
-  static decrementReadingsLeft(): void {
-    const subscription = this.getSubscription();
-    subscription.dailyReadingsLeft--;
-    this.saveSubscription(subscription);
-  }
-
-  static getReadingsLeft(): number {
-    return this.getSubscription().dailyReadingsLeft;
-  }
-} 
+export const subscriptionService = SubscriptionService.getInstance(); 

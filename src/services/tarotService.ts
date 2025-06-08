@@ -1,67 +1,128 @@
-import { TarotCard, Reading, ReadingType } from '../types/tarot';
+import { Card, Reading, UserReading, ReadingType } from '../types/tarot';
 import { tarotCards } from '../data/tarotCards';
 
-export class TarotService {
-  private static shuffleArray<T>(array: T[]): T[] {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
+class TarotService {
+  private static instance: TarotService;
+  private userReadings: Map<string, UserReading> = new Map();
+  private cards: Card[] = [...tarotCards];
+
+  private constructor() {}
+
+  public static getInstance(): TarotService {
+    if (!TarotService.instance) {
+      TarotService.instance = new TarotService();
+    }
+    return TarotService.instance;
+  }
+
+  public shuffleCards(): void {
+    for (let i = this.cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+      [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
     }
-    return newArray;
   }
 
-  private static getRandomCards(count: number): TarotCard[] {
-    const shuffledCards = this.shuffleArray(tarotCards);
-    return shuffledCards.slice(0, count);
+  public drawCards(count: number): Card[] {
+    if (count > this.cards.length) {
+      throw new Error('Not enough cards in the deck');
+    }
+    return this.cards.slice(0, count);
   }
 
-  private static isReversed(): boolean {
-    return Math.random() > 0.5;
+  public getCardById(id: number): Card | undefined {
+    return this.cards.find(card => card.id === id);
   }
 
-  static getReading(type: ReadingType, question?: string): Reading {
-    let cards: TarotCard[];
+  public getCardsByCategory(category: 'major' | 'minor'): Card[] {
+    return this.cards.filter(card => card.category === category);
+  }
+
+  public getCardsBySuit(suit: 'wands' | 'cups' | 'swords' | 'pentacles'): Card[] {
+    return this.cards.filter(card => card.suit === suit);
+  }
+
+  public getRandomCard(): Card {
+    const randomIndex = Math.floor(Math.random() * this.cards.length);
+    return this.cards[randomIndex];
+  }
+
+  public getRandomCards(count: number): Card[] {
+    const shuffled = [...tarotCards].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count).map(card => ({
+      ...card,
+      isReversed: Math.random() > 0.5
+    }));
+  }
+
+  public resetDeck(): void {
+    this.cards = [...tarotCards];
+  }
+
+  public getCardMeaning(card: Card): string {
+    return card.isReversed ? card.reversedDescription : card.description;
+  }
+
+  public getCardKeywords(card: Card, isReversed: boolean): string[] {
+    return isReversed ? card.reversedKeywords : card.keywords;
+  }
+
+  public createReading(type: ReadingType, question?: string): Reading {
+    const cards = this.getRandomCards(type === 'yesno' ? 1 : type === 'daily' ? 3 : 7);
     
-    switch (type) {
-      case 'daily':
-        cards = this.getRandomCards(1);
-        break;
-      case 'weekly':
-        cards = this.getRandomCards(3);
-        break;
-      case 'yesno':
-        cards = this.getRandomCards(1);
-        break;
-      default:
-        cards = this.getRandomCards(1);
-    }
-
     return {
       type,
+      date: Date.now(),
       cards,
-      question,
-      timestamp: Date.now()
+      question
     };
   }
 
-  static getCardMeaning(card: TarotCard): string {
-    return this.isReversed() ? card.meaning.reversed : card.meaning.upright;
+  public getUserReading(userId: string): UserReading | undefined {
+    return this.userReadings.get(userId);
   }
 
-  static getYesNoAnswer(card: TarotCard): string {
-    const isPositive = [
-      "Маг", "Императрица", "Император", "Иерофант", "Влюбленные",
-      "Колесница", "Сила", "Колесо Фортуны", "Справедливость",
-      "Умеренность", "Звезда", "Солнце", "Суд", "Мир"
-    ].includes(card.name);
+  public saveUserReading(userId: string, reading: Reading): void {
+    const userReading = this.userReadings.get(userId) || {
+      userId,
+      readings: [],
+      lastReadingDate: 0,
+      questionsRemaining: 2,
+      isSubscribed: false
+    };
 
-    const isReversed = this.isReversed();
+    userReading.readings.push(reading);
+    userReading.lastReadingDate = Date.now();
     
-    if (isPositive) {
-      return isReversed ? "Нет" : "Да";
-    } else {
-      return isReversed ? "Да" : "Нет";
+    if (!userReading.isSubscribed) {
+      userReading.questionsRemaining = Math.max(0, userReading.questionsRemaining - 1);
     }
+
+    this.userReadings.set(userId, userReading);
   }
-} 
+
+  public canUserAskQuestion(userId: string): boolean {
+    const userReading = this.userReadings.get(userId);
+    if (!userReading) return true;
+    return userReading.isSubscribed || userReading.questionsRemaining > 0;
+  }
+
+  public subscribeUser(userId: string): void {
+    const userReading = this.userReadings.get(userId) || {
+      userId,
+      readings: [],
+      lastReadingDate: 0,
+      questionsRemaining: 2,
+      isSubscribed: false
+    };
+
+    userReading.isSubscribed = true;
+    this.userReadings.set(userId, userReading);
+  }
+
+  public getYesNoAnswer(card: Card): string {
+    const isPositive = !card.isReversed;
+    return isPositive ? 'Да' : 'Нет';
+  }
+}
+
+export const tarotService = TarotService.getInstance(); 

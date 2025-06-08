@@ -1,31 +1,47 @@
-export interface TarotCard {
+import { tarotCards } from '../data/tarotCards';
+
+export type ReadingType = 'yesno' | 'daily' | 'weekly';
+
+export interface Card {
   id: number;
   name: string;
+  nameEn: string;
   image: string;
-  meaning: {
-    upright: string;
-    reversed: string;
-  };
+  description: string;
+  reversedDescription: string;
+  element: string;
+  keywords: string[];
+  reversedKeywords: string[];
+  category: string;
+  suit?: string;
+  number?: number;
+  isReversed?: boolean;
 }
-
-export type ReadingType = 'daily' | 'weekly' | 'yesno';
 
 export interface Reading {
   type: ReadingType;
-  cards: TarotCard[];
+  cards: Card[];
+  date: number;
   question?: string;
-  timestamp: number;
+}
+
+export interface UserReading {
+  userId: string;
+  readings: Reading[];
+  lastReadingDate: number;
+  questionsRemaining: number;
+  isSubscribed: boolean;
 }
 
 export interface Subscription {
   isActive: boolean;
-  expiresAt: number;
-  dailyReadingsLeft: number;
+  startDate: number;
+  endDate: number;
+  readingsLeft: number;
 }
 
 export const SUBSCRIPTION_LIMITS = {
-  FREE_DAILY_READINGS: 2,
-  PREMIUM_DAILY_READINGS: 10,
-  SUBSCRIPTION_PRICE: 299, // в рублях
-  SUBSCRIPTION_DURATION: 30 * 24 * 60 * 60 * 1000, // 30 дней в миллисекундах
+  FREE_DAILY_READINGS: 3,
+  SUBSCRIPTION_PRICE: 299,
+  SUBSCRIPTION_DAILY_READINGS: 10
 } as const; 

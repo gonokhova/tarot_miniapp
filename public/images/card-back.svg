@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="500" viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон карты -->
+  <rect width="300" height="500" rx="20" ry="20" fill="#2c3e50"/>
+  
+  <!-- Градиентный фон -->
+  <defs>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2c3e50;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Основной фон с градиентом -->
+  <rect width="280" height="480" x="10" y="10" rx="15" ry="15" fill="url(#cardGradient)"/>
+  
+  <!-- Декоративный узор -->
+  <g fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.1">
+    <!-- Внешний круг -->
+    <circle cx="150" cy="250" r="200"/>
+    <!-- Внутренний круг -->
+    <circle cx="150" cy="250" r="150"/>
+    <!-- Центральный круг -->
+    <circle cx="150" cy="250" r="100"/>
+    
+    <!-- Декоративные линии -->
+    <line x1="50" y1="250" x2="250" y2="250"/>
+    <line x1="150" y1="50" x2="150" y2="450"/>
+    
+    <!-- Диагональные линии -->
+    <line x1="75" y1="75" x2="225" y2="425"/>
+    <line x1="225" y1="75" x2="75" y2="425"/>
+  </g>
+  
+  <!-- Символ Таро в центре -->
+  <g fill="#ffffff" fill-opacity="0.2">
+    <path d="M150,200 L180,250 L150,300 L120,250 Z"/>
+    <circle cx="150" cy="250" r="30"/>
+  </g>
+  
+  <!-- Текст -->
+  <text x="150" y="400" 
+        font-family="Arial" 
+        font-size="24" 
+        fill="#ffffff" 
+        text-anchor="middle">
+    TAROT
+  </text>
+</svg> 
