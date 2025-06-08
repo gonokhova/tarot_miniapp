@@ -45,7 +45,7 @@ export class SubscriptionService {
 
   static async purchaseSubscription(): Promise<boolean> {
     try {
-      const result = await WebApp.showPopup({
+      await WebApp.showPopup({
         title: 'Премиум подписка',
         message: `Получите неограниченный доступ к предсказаниям за ${SUBSCRIPTION_LIMITS.SUBSCRIPTION_PRICE} ₽/месяц`,
         buttons: [
@@ -54,16 +54,15 @@ export class SubscriptionService {
         ]
       });
 
-      if (result && 'button_id' in result && result.button_id === 'buy') {
-        const subscription: Subscription = {
-          isActive: true,
-          expiresAt: Date.now() + SUBSCRIPTION_LIMITS.SUBSCRIPTION_DURATION,
-          dailyReadingsLeft: SUBSCRIPTION_LIMITS.PREMIUM_DAILY_READINGS
-        };
-        this.saveSubscription(subscription);
-        return true;
-      }
-      return false;
+      // В реальном приложении здесь будет обработка платежа
+      // Сейчас просто создаем подписку
+      const subscription: Subscription = {
+        isActive: true,
+        expiresAt: Date.now() + SUBSCRIPTION_LIMITS.SUBSCRIPTION_DURATION,
+        dailyReadingsLeft: SUBSCRIPTION_LIMITS.PREMIUM_DAILY_READINGS
+      };
+      this.saveSubscription(subscription);
+      return true;
     } catch (error) {
       console.error('Error purchasing subscription:', error);
       return false;
