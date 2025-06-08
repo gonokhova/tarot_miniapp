@@ -2,7 +2,7 @@
   "name": "taro-miniapp",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://your-username.github.io/taro-miniapp",
+  "homepage": "https://gonokhova.github.io/tarot_miniapp",
   "dependencies": {
     "@twa-dev/sdk": "^6.9.1",
     "react": "^18.2.0",
@@ -16,7 +16,7 @@
   },
   "scripts": {
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
+    "deploy": "gh-pages -d dist",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
