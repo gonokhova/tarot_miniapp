@@ -49,7 +49,7 @@ export class SubscriptionService {
         title: 'Премиум подписка',
         message: `Получите неограниченный доступ к предсказаниям за ${SUBSCRIPTION_LIMITS.SUBSCRIPTION_PRICE} ₽/месяц`,
         buttons: [
-          { id: 'buy', type: 'buy' },
+          { id: 'buy', type: 'ok' },
           { id: 'cancel', type: 'cancel' }
         ]
       });
