@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import TarotCard from './TarotCard';
+import { TarotCard } from './TarotCard';
 import ReadingInterpretation from './ReadingInterpretation';
 import { Card } from '../types/tarot';
 import { ReadingInterpretationService } from '../services/ReadingInterpretationService';

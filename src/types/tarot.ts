@@ -23,25 +23,4 @@ export interface Reading {
   cards: Card[];
   date: number;
   question?: string;
-}
-
-export interface UserReading {
-  userId: string;
-  readings: Reading[];
-  lastReadingDate: number;
-  questionsRemaining: number;
-  isSubscribed: boolean;
-}
-
-export interface Subscription {
-  isActive: boolean;
-  startDate: number;
-  endDate: number;
-  readingsLeft: number;
-}
-
-export const SUBSCRIPTION_LIMITS = {
-  FREE_DAILY_READINGS: 3,
-  SUBSCRIPTION_PRICE: 299,
-  SUBSCRIPTION_DAILY_READINGS: 10
-} as const; 
+} 

@@ -60,7 +60,7 @@ interface DisclaimerModalProps {
   onClose: () => void;
 }
 
-const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onClose }) => {
+export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onClose }) => {
   return (
     <ModalOverlay>
       <ModalContent>
@@ -77,6 +77,4 @@ const DisclaimerModal: React.FC<DisclaimerModalProps> = ({ onClose }) => {
       </ModalContent>
     </ModalOverlay>
   );
-};
-
-export default DisclaimerModal; 
+}; 

@@ -22,12 +22,10 @@ interface ReadingButtonProps {
   children: React.ReactNode;
 }
 
-const ReadingButton: React.FC<ReadingButtonProps> = ({ onClick, children }) => {
+export const ReadingButton: React.FC<ReadingButtonProps> = ({ onClick, children }) => {
   return (
     <Button onClick={onClick}>
       {children}
     </Button>
   );
-};
-
-export default ReadingButton; 
+}; 

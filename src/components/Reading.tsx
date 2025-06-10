@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import TarotCard from './TarotCard';
+import { TarotCard } from './TarotCard';
 import { Card } from '../types/tarot';
-import { TarotService } from '../services/tarotService';
+import { tarotService } from '../services/tarotService';
 
 interface ReadingProps {
-  type: 'daily' | 'weekly' | 'yesno';
-  onComplete: (reading: Card[]) => void;
+  type?: 'daily' | 'weekly' | 'yesno';
+  onClose: () => void;
+  reading?: Card[];
 }
 
 const ReadingContainer = styled.div`
@@ -54,18 +55,29 @@ const Button = styled.button`
   }
 `;
 
-const Reading: React.FC<ReadingProps> = ({ type, onComplete }) => {
+export const ReadingComponent: React.FC<ReadingProps> = ({ type, onClose, reading }) => {
   const [cards, setCards] = useState<Card[]>([]);
   const [revealedCards, setRevealedCards] = useState<boolean[]>([]);
   const [question, setQuestion] = useState('');
   const [isComplete, setIsComplete] = useState(false);
 
+  useEffect(() => {
+    if (reading && reading.length > 0) {
+      setCards(reading);
+      setRevealedCards(new Array(reading.length).fill(true));
+      setIsComplete(true);
+    } else if (type) {
+      startReading();
+    }
+  }, [reading, type]);
+
   const startReading = () => {
-    const tarotService = TarotService.getInstance();
+    if (!type) return;
     const numCards = type === 'yesno' ? 1 : type === 'daily' ? 3 : 7;
     const newCards = tarotService.getRandomCards(numCards);
     setCards(newCards);
     setRevealedCards(new Array(numCards).fill(false));
+    setIsComplete(false);
   };
 
   const handleCardReveal = (index: number) => {
@@ -75,20 +87,19 @@ const Reading: React.FC<ReadingProps> = ({ type, onComplete }) => {
 
     if (newRevealedCards.every(revealed => revealed)) {
       setIsComplete(true);
-      onComplete(cards);
     }
   };
 
   const handleQuestionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (question.trim()) {
+    if (question.trim() && type === 'yesno') {
       startReading();
     }
   };
 
   return (
     <ReadingContainer>
-      {type === 'yesno' && !cards.length && (
+      {type === 'yesno' && !cards.length && !reading && (
         <form onSubmit={handleQuestionSubmit}>
           <QuestionInput
             type="text"
@@ -102,7 +113,7 @@ const Reading: React.FC<ReadingProps> = ({ type, onComplete }) => {
         </form>
       )}
 
-      {!cards.length && type !== 'yesno' && (
+      {!cards.length && type !== 'yesno' && !reading && (
         <Button onClick={startReading}>
           Начать гадание
         </Button>
@@ -126,12 +137,11 @@ const Reading: React.FC<ReadingProps> = ({ type, onComplete }) => {
           setRevealedCards([]);
           setQuestion('');
           setIsComplete(false);
+          onClose();
         }}>
           Новое гадание
         </Button>
       )}
     </ReadingContainer>
   );
-};
-
-export default Reading; 
+}; 

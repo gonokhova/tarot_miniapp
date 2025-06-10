@@ -16,12 +16,14 @@ const Title = styled.h1`
   margin: 0;
 `;
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  children?: React.ReactNode;
+}
+
+export const Header: React.FC<HeaderProps> = ({ children }) => {
   return (
     <HeaderContainer>
-      <Title>Таро Гадание</Title>
+      {children}
     </HeaderContainer>
   );
-};
-
-export default Header; 
+}; 

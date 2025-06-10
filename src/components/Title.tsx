@@ -24,13 +24,11 @@ interface TitleProps {
   subtitle?: string;
 }
 
-const Title: React.FC<TitleProps> = ({ title, subtitle }) => {
+export const Title: React.FC<TitleProps> = ({ title, subtitle }) => {
   return (
     <TitleContainer>
       <MainTitle>{title}</MainTitle>
       {subtitle && <Subtitle>{subtitle}</Subtitle>}
     </TitleContainer>
   );
-};
-
-export default Title; 
+}; 

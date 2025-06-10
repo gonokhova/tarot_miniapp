@@ -1,9 +1,8 @@
-import { Card, Reading, UserReading, ReadingType } from '../types/tarot';
+import { Card, Reading, ReadingType } from '../types/tarot';
 import { tarotCards } from '../data/tarotCards';
 
 class TarotService {
   private static instance: TarotService;
-  private userReadings: Map<string, UserReading> = new Map();
   private cards: Card[] = [...tarotCards];
 
   private constructor() {}
@@ -47,10 +46,14 @@ class TarotService {
   }
 
   public getRandomCards(count: number): Card[] {
-    const shuffled = [...tarotCards].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count).map(card => ({
+    const cards = [...tarotCards];
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    return cards.slice(0, count).map(card => ({
       ...card,
-      isReversed: Math.random() > 0.5
+      isReversed: Math.random() < 0.5
     }));
   }
 
@@ -66,62 +69,11 @@ class TarotService {
     return isReversed ? card.reversedKeywords : card.keywords;
   }
 
-  public createReading(type: ReadingType, question?: string): Reading {
-    const cards = this.getRandomCards(type === 'yesno' ? 1 : type === 'daily' ? 3 : 7);
-    
-    return {
-      type,
-      date: Date.now(),
-      cards,
-      question
-    };
-  }
-
-  public getUserReading(userId: string): UserReading | undefined {
-    return this.userReadings.get(userId);
-  }
-
-  public saveUserReading(userId: string, reading: Reading): void {
-    const userReading = this.userReadings.get(userId) || {
-      userId,
-      readings: [],
-      lastReadingDate: 0,
-      questionsRemaining: 2,
-      isSubscribed: false
-    };
-
-    userReading.readings.push(reading);
-    userReading.lastReadingDate = Date.now();
-    
-    if (!userReading.isSubscribed) {
-      userReading.questionsRemaining = Math.max(0, userReading.questionsRemaining - 1);
-    }
-
-    this.userReadings.set(userId, userReading);
-  }
-
-  public canUserAskQuestion(userId: string): boolean {
-    const userReading = this.userReadings.get(userId);
-    if (!userReading) return true;
-    return userReading.isSubscribed || userReading.questionsRemaining > 0;
-  }
-
-  public subscribeUser(userId: string): void {
-    const userReading = this.userReadings.get(userId) || {
-      userId,
-      readings: [],
-      lastReadingDate: 0,
-      questionsRemaining: 2,
-      isSubscribed: false
-    };
-
-    userReading.isSubscribed = true;
-    this.userReadings.set(userId, userReading);
-  }
-
-  public getYesNoAnswer(card: Card): string {
-    const isPositive = !card.isReversed;
-    return isPositive ? 'Да' : 'Нет';
+  public createReading(type: ReadingType): { cards: Card[] } {
+    let count = 3;
+    if (type === 'yesno') count = 1;
+    if (type === 'weekly') count = 7;
+    return { cards: this.getRandomCards(count) };
   }
 }
 

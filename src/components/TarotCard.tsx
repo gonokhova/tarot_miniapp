@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { Card } from '../types/tarot';
 
@@ -15,6 +15,7 @@ const CardContainer = styled.div<{ isRevealed: boolean; isReversed: boolean }>`
   perspective: 1000px;
   cursor: ${props => props.isRevealed ? 'default' : 'pointer'};
   transform: ${props => props.isReversed ? 'rotate(180deg)' : 'none'};
+  margin: ${props => props.theme.spacing.md};
 `;
 
 const CardInner = styled.div<{ isRevealed: boolean }>`
@@ -33,19 +34,24 @@ const CardFront = styled.div`
   height: 100%;
   backface-visibility: hidden;
   background: url('/images/card-back.jpg') center/cover;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: ${props => props.theme.borderRadius.medium};
+  box-shadow: ${props => props.theme.shadows.medium};
 `;
 
-const CardBack = styled.div<{ isReversed: boolean }>`
+const CardBack = styled.div`
   position: absolute;
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
   transform: rotateY(180deg);
-  background: url(${props => props.isReversed ? '/images/cards/reversed/' : '/images/cards/upright/'}${props => props.card.image}) center/cover;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: ${props => props.theme.borderRadius.medium};
+  box-shadow: ${props => props.theme.shadows.medium};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: ${props => props.theme.colors.background};
+  padding: ${props => props.theme.spacing.md};
 `;
 
 const CardImage = styled.img`
@@ -53,43 +59,57 @@ const CardImage = styled.img`
   height: auto;
   max-height: 70%;
   object-fit: contain;
-  margin-bottom: 10px;
+  margin-bottom: ${props => props.theme.spacing.md};
+  border-radius: ${props => props.theme.borderRadius.small};
 `;
 
 const CardName = styled.h3`
   margin: 0;
-  font-size: 1.2em;
+  font-family: ${props => props.theme.typography.fontFamily};
+  font-size: ${props => props.theme.typography.sizes.large};
+  font-weight: ${props => props.theme.typography.weights.bold};
+  color: ${props => props.theme.colors.text};
   text-align: center;
+  margin-bottom: ${props => props.theme.spacing.sm};
 `;
 
 const CardDescription = styled.p`
-  margin: 5px 0;
-  font-size: 0.9em;
+  margin: ${props => props.theme.spacing.sm} 0;
+  font-family: ${props => props.theme.typography.fontFamily};
+  font-size: ${props => props.theme.typography.sizes.regular};
+  font-weight: ${props => props.theme.typography.weights.regular};
+  color: ${props => props.theme.colors.text};
   text-align: center;
+  line-height: 1.4;
 `;
 
 const KeywordsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: ${props => props.theme.spacing.sm};
   justify-content: center;
-  margin-top: 0.5rem;
+  margin-top: ${props => props.theme.spacing.md};
 `;
 
 const Keyword = styled.span`
-  background: rgba(255, 255, 255, 0.1);
-  padding: 0.2rem 0.5rem;
-  border-radius: 15px;
-  font-size: 0.8rem;
+  background: ${props => props.theme.colors.lightGray};
+  color: ${props => props.theme.colors.text};
+  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
+  border-radius: ${props => props.theme.borderRadius.small};
+  font-family: ${props => props.theme.typography.fontFamily};
+  font-size: ${props => props.theme.typography.sizes.small};
+  font-weight: ${props => props.theme.typography.weights.medium};
 `;
 
-const TarotCard: React.FC<TarotCardProps> = ({ card, isRevealed, isReversed, onClick }) => {
+export const TarotCard: React.FC<TarotCardProps> = ({ card, isRevealed, isReversed, onClick }) => {
+  const imagePath = `/images/cards/${isReversed ? 'reversed' : 'upright'}/${card.image}`;
+  
   return (
     <CardContainer isRevealed={isRevealed} isReversed={isReversed}>
       <CardInner isRevealed={isRevealed} onClick={onClick}>
         <CardFront />
-        <CardBack card={card} isReversed={isReversed}>
-          <CardImage src={`/images/cards/${isReversed ? 'reversed' : 'upright'}/${card.image}`} alt={card.name} />
+        <CardBack>
+          <CardImage src={imagePath} alt={card.name} />
           <CardName>{card.name}</CardName>
           <CardDescription>
             {isReversed ? card.reversedDescription : card.description}
@@ -103,6 +123,4 @@ const TarotCard: React.FC<TarotCardProps> = ({ card, isRevealed, isReversed, onC
       </CardInner>
     </CardContainer>
   );
-};
-
-export default TarotCard; 
+}; 

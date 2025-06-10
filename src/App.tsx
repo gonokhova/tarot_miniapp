@@ -1,138 +1,100 @@
 import React, { useEffect, useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
-import { lightTheme, darkTheme } from './styles/theme';
-import { Card, Reading, ReadingType } from './types/tarot';
+import { lightTheme } from './styles/theme';
+import { Card, ReadingType } from './types/tarot';
 import { tarotService } from './services/tarotService';
-import { historyService } from './services/historyService';
-import { subscriptionService } from './services/subscriptionService';
-import { soundService } from './services/soundService';
 import WebApp from '@twa-dev/sdk';
-import { SUBSCRIPTION_LIMITS } from './types/tarot';
 import { ReadingComponent } from './components/Reading';
-import { ReadingResult } from './components/ReadingResult';
 import { DisclaimerModal } from './components/DisclaimerModal';
-import { HistoryView } from './components/HistoryView';
-import { TarotCard } from './components/TarotCard';
 import { AnimatedBackground } from './components/AnimatedBackground';
-import { AnimatedCard } from './components/AnimatedCard';
-import { ReadingButton } from './components/ReadingButton';
 import { ReadingOptions } from './components/ReadingOptions';
-import { SubscriptionInfo } from './components/SubscriptionInfo';
 import { Header } from './components/Header';
 import { Title } from './components/Title';
 import { SoundControl } from './components/SoundControl';
-import { ThemeToggle } from './components/ThemeToggle';
 
-type View = 'reading' | 'history' | 'result';
+type View = 'reading';
 
 const AppContainer = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: ${props => props.theme.spacing.md};
   background: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text};
-`;
-
-const Subtitle = styled.p`
-  color: #34495e;
-  font-size: 1.2rem;
+  font-family: ${props => props.theme.typography.fontFamily};
 `;
 
 const Controls = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: ${props => props.theme.spacing.md};
+  margin-bottom: ${props => props.theme.spacing.lg};
 `;
 
 const Button = styled.button`
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  background: #3498db;
-  color: white;
+  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
+  font-family: ${props => props.theme.typography.fontFamily};
+  font-size: ${props => props.theme.typography.sizes.regular};
+  font-weight: ${props => props.theme.typography.weights.medium};
+  background: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.background};
   border: none;
-  border-radius: 5px;
+  border-radius: ${props => props.theme.borderRadius.medium};
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: ${props => props.theme.shadows.small};
 
   &:hover {
-    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: ${props => props.theme.shadows.medium};
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: ${props => props.theme.shadows.small};
   }
 
   &:disabled {
-    background: #bdc3c7;
+    background: ${props => props.theme.colors.gray};
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
-`;
-
-const ReadingTypeContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const ReadingTypeButton = styled(Button)<{ active: boolean }>`
-  background: ${props => props.active ? '#2ecc71' : '#3498db'};
-`;
-
-const CardGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
 `;
 
 const Navigation = styled.div`
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: ${props => props.theme.spacing.md};
+  margin-bottom: ${props => props.theme.spacing.lg};
+  width: 100%;
+  max-width: 600px;
 `;
 
 const NavButton = styled(Button)<{ isActive: boolean }>`
-  background: ${props => props.isActive ? '#2ecc71' : '#3498db'};
+  background: ${props => props.isActive ? props.theme.colors.primary : props.theme.colors.secondary};
+  width: 100%;
 `;
 
 const BackButton = styled(Button)`
-  background: #e74c3c;
+  background: ${props => props.theme.colors.error};
+  margin-bottom: ${props => props.theme.spacing.lg};
 
   &:hover {
-    background: #c0392b;
+    background: ${props => props.theme.colors.error};
   }
-`;
-
-const ShareButton = styled(Button)`
-  background: #2ecc71;
-
-  &:hover {
-    background: #27ae60;
-  }
-`;
-
-const QuestionInput = styled.input`
-  padding: 0.8rem;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-bottom: 1rem;
 `;
 
 const App: React.FC = () => {
   const [currentReading, setCurrentReading] = useState<Card[]>([]);
-  const [readingsLeft, setReadingsLeft] = useState<number>(SUBSCRIPTION_LIMITS.FREE_DAILY_READINGS);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [currentView, setCurrentView] = useState<View>('reading');
   const [selectedType, setSelectedType] = useState<ReadingType>('daily');
-  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   useEffect(() => {
     WebApp.ready();
     WebApp.expand();
-    setReadingsLeft(subscriptionService.getReadingsLeft());
 
     const hasSeenDisclaimer = localStorage.getItem('hasSeenDisclaimer');
     if (hasSeenDisclaimer) {
@@ -145,58 +107,71 @@ const App: React.FC = () => {
     localStorage.setItem('hasSeenDisclaimer', 'true');
   };
 
-  const handleReading = async (type: ReadingType) => {
-    if (!subscriptionService.canPerformReading()) {
-      const purchased = await subscriptionService.purchaseSubscription();
-      if (!purchased) return;
-      setReadingsLeft(subscriptionService.getReadingsLeft());
+  const canDoReading = (type: ReadingType): boolean => {
+    if (!WebApp.initDataUnsafe.user?.id) {
+      // For testing outside Telegram or if user ID is not available
+      return true;
+    }
+
+    const userId = WebApp.initDataUnsafe.user.id;
+    const lastReading = localStorage.getItem(`${type}_${userId}`);
+
+    if (!lastReading) return true;
+
+    const lastDate = new Date(lastReading);
+    const now = new Date();
+
+    if (type === 'daily') {
+      return lastDate.getDate() !== now.getDate() ||
+             lastDate.getMonth() !== now.getMonth() ||
+             lastDate.getFullYear() !== now.getFullYear();
+    }
+    if (type === 'weekly') {
+      const startOfWeekLast = new Date(lastDate);
+      startOfWeekLast.setDate(lastDate.getDate() - lastDate.getDay()); // Sunday
+      startOfWeekLast.setHours(0, 0, 0, 0);
+
+      const startOfWeekNow = new Date(now);
+      startOfWeekNow.setDate(now.getDate() - now.getDay()); // Sunday
+      startOfWeekNow.setHours(0, 0, 0, 0);
+
+      return startOfWeekLast.getTime() !== startOfWeekNow.getTime();
+    }
+    return true; // No limit for 'yesno' type
+  };
+
+  const handleReading = (type: ReadingType) => {
+    if (!canDoReading(type)) {
+      let message = '';
+      if (type === 'daily') {
+        message = 'Вы уже получали карту дня сегодня! Пожалуйста, попробуйте завтра.';
+      } else if (type === 'weekly') {
+        message = 'Вы уже делали недельный расклад на этой неделе! Пожалуйста, попробуйте на следующей.';
+      } else {
+        message = 'Пожалуйста, подождите, прежде чем делать следующий расклад.';
+      }
+      WebApp.showAlert(message);
+      return;
     }
 
     const reading = tarotService.createReading(type);
     setCurrentReading(reading.cards);
-    historyService.addToHistory(reading);
-    subscriptionService.decrementReadingsLeft();
-    setReadingsLeft(subscriptionService.getReadingsLeft());
+    if (WebApp.initDataUnsafe.user?.id) {
+      localStorage.setItem(`${type}_${WebApp.initDataUnsafe.user.id}`, new Date().toISOString());
+    }
   };
 
   const handleBack = () => {
     setCurrentReading([]);
   };
 
-  const handlePurchaseSubscription = async () => {
-    const purchased = await subscriptionService.purchaseSubscription();
-    if (purchased) {
-      setReadingsLeft(subscriptionService.getReadingsLeft());
-    }
-  };
-
-  const handleShare = () => {
-    if (currentReading.length) {
-      const shareText = `🔮 Таро Предсказание\n\n` +
-        `Тип: ${selectedType}\n` +
-        `Карты:\n${currentReading.map(card => 
-          `${card.name}${card.isReversed ? ' (Перевернутая)' : ''}`
-        ).join('\n')}\n\n` +
-        `Толкование:\n${currentReading.map(card => 
-          `${card.name}: ${card.isReversed ? card.reversedDescription : card.description}`
-        ).join('\n')}`;
-
-      WebApp.share(shareText);
-    }
-  };
-
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-  };
-
   return (
-    <ThemeProvider theme={isDarkTheme ? darkTheme : lightTheme}>
+    <ThemeProvider theme={lightTheme}>
       <AppContainer>
         <AnimatedBackground />
         <Header>
-          <Title>Таро Предсказания</Title>
+          <Title title="Таро Предсказания" />
           <Controls>
-            <ThemeToggle isDark={isDarkTheme} onToggle={toggleTheme} />
             <SoundControl />
           </Controls>
         </Header>
@@ -212,30 +187,18 @@ const App: React.FC = () => {
           >
             Предсказание
           </NavButton>
-          <NavButton 
-            isActive={currentView === 'history'} 
-            onClick={() => setCurrentView('history')}
-          >
-            История
-          </NavButton>
         </Navigation>
 
-        {currentView === 'history' ? (
-          <HistoryView />
-        ) : currentReading.length > 0 ? (
+        {currentView === 'reading' && currentReading.length > 0 ? (
           <>
             <BackButton onClick={handleBack}>← Назад</BackButton>
             <ReadingComponent
               reading={currentReading}
               onClose={handleBack}
             />
-            <ShareButton onClick={handleShare}>
-              Поделиться предсказанием
-            </ShareButton>
           </>
         ) : (
           <>
-            <SubscriptionInfo readingsLeft={readingsLeft} />
             <ReadingOptions
               selectedType={selectedType}
               onTypeSelect={setSelectedType}
